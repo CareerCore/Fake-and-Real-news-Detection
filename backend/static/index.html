@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrediNews AI — News Authenticity Verifier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- Top Navigation -->
+    <header class="app-header">
+      <div class="brand-area">
+        <div class="brand-logo">🛡️</div>
+        <div class="brand-info">
+          <h1 class="brand-name">CrediNews <span class="brand-tag">AI</span></h1>
+          <p class="brand-tagline">News Authenticity &amp; Credibility Verifier</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <nav class="nav-pills" aria-label="Main Navigation">
+          <button type="button" class="nav-pill active" data-page="page-checker" id="nav-btn-checker">
+            <span>News Checker</span>
+          </button>
+          <button type="button" class="nav-pill" data-page="page-history" id="nav-btn-history">
+            <span>History (<span id="history-count">0</span>)</span>
+          </button>
+        </nav>
+
+        <button type="button" id="theme-toggle" class="theme-btn" title="Toggle color theme" aria-label="Toggle theme">
+          <span id="theme-icon">🌙</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- PAGE 1: News Checker Input -->
+    <main id="page-checker" class="view-panel">
+      <div class="clean-card">
+        <div class="card-title-group">
+          <h2 class="card-main-title">Verify News Credibility</h2>
+          <p class="card-sub-description">Paste article text or upload a CSV file to evaluate authenticity, linguistic cues, and credibility patterns.</p>
+        </div>
+
+        <!-- Quick Test Samples -->
+        <div class="samples-container">
+          <span class="samples-title">Quick Samples:</span>
+          <div class="samples-list">
+            <button type="button" class="sample-chip is-real" data-sample="real_clean">Transit Modernization</button>
+            <button type="button" class="sample-chip is-real" data-sample="real_econ">Central Bank Rate Cut</button>
+            <button type="button" class="sample-chip is-fake" data-sample="fake_cure">Overnight Miracle Cure</button>
+            <button type="button" class="sample-chip is-fake" data-sample="fake_politics">Vatican Endorsement</button>
+          </div>
+        </div>
+
+        <!-- Verification Form -->
+        <form id="verify-form">
+          <div class="form-row">
+            <div class="field-header">
+              <label for="news-title" class="field-label">Headline / Title <span class="field-opt">(optional)</span></label>
+            </div>
+            <input type="text" id="news-title" class="input-text" placeholder="e.g. Municipal Transit Authority Approves Fleet Modernization Schedule...">
+          </div>
+
+          <div class="form-row">
+            <div class="field-header">
+              <label for="news-text" class="field-label">Article Text or Excerpt</label>
+              <span class="word-counter" id="text-counter">0 words</span>
+            </div>
+            <textarea id="news-text" class="input-area" rows="6" placeholder="Paste the full article dispatch or text snippet here..." required></textarea>
+          </div>
+
+          <!-- File Upload Row -->
+          <div class="upload-section">
+            <label for="file-upload" class="upload-trigger">
+              <span class="upload-icon">📂</span>
+              <span class="upload-label">Upload File (.csv / .txt)</span>
+              <input type="file" id="file-upload" accept=".csv,.txt" hidden>
+            </label>
+            <span id="file-name-display" class="file-badge" style="display: none;"></span>
+            <button type="button" id="btn-clear-file" class="btn-clear-file" style="display: none;">✕ Remove</button>
+            <span class="upload-note">CSV files must contain a "text" column (optional "title")</span>
+          </div>
+
+          <!-- Form Buttons -->
+          <div class="form-actions">
+            <div class="actions-left">
+              <button type="submit" id="btn-submit" class="btn-primary">
+                <span id="btn-label">Show Result</span>
+                <span id="btn-spinner" class="spinner" style="display: none;"></span>
+              </button>
+              <button type="button" id="btn-reset" class="btn-secondary">Clear</button>
+            </div>
+            <span class="fast-badge">⚡ Instant Analysis</span>
+          </div>
+        </form>
+      </div>
+    </main>
+
+    <!-- PAGE 2: Dedicated Results Page (Graphs & Keywords) -->
+    <section id="page-results" class="view-panel hidden">
+      <div class="clean-card">
+        <!-- Top Back Navigation -->
+        <div class="results-top-nav">
+          <button type="button" class="btn-back-nav" id="btn-back-top">
+            <span class="back-arrow">←</span> Check Another
+          </button>
+          <span class="result-timestamp" id="result-timestamp">Analysis Report</span>
+        </div>
+
+        <!-- SINGLE ARTICLE RESULTS -->
+        <div id="single-result-area" style="display: none;">
+          <!-- Primary Verdict Banner -->
+          <div id="verdict-banner" class="verdict-card">
+            <div class="verdict-headline-row">
+              <div id="verdict-badge" class="verdict-status-pill">
+                <span id="verdict-icon" class="verdict-glyph">✓</span>
+                <span id="verdict-text">Likely Authentic</span>
+              </div>
+              <span id="confidence-tag" class="confidence-badge">High Confidence</span>
+            </div>
+            <p id="verdict-takeaway" class="verdict-summary-text"></p>
+          </div>
+
+          <!-- Result Visual Graphs & Authenticity Meter -->
+          <div class="graphs-grid">
+            <!-- Graph 1: Authenticity Score Bar Graphic -->
+            <div class="graph-card">
+              <div class="graph-card-header">
+                <span class="graph-card-title">Authenticity Breakdown</span>
+                <span id="meter-score-text" class="graph-score-badge">98%</span>
+              </div>
+              <div class="score-bar-track">
+                <div id="score-bar-fill" class="score-bar-fill" style="width: 98%;"></div>
+              </div>
+              <div class="score-bar-labels">
+                <span>0% Misleading</span>
+                <span>50% Neutral</span>
+                <span>100% Authentic</span>
+              </div>
+            </div>
+
+            <!-- Graph 2: Linguistic Confidence Signals -->
+            <div class="graph-card">
+              <div class="graph-card-header">
+                <span class="graph-card-title">Linguistic Confidence Signals</span>
+              </div>
+              <div class="signal-bars-stack">
+                <div class="bar-metric-row">
+                  <span class="bar-name">Source Attribution</span>
+                  <div class="bar-track-mini">
+                    <div id="bar-source" class="bar-fill-mini is-good" style="width: 85%;"></div>
+                  </div>
+                  <span id="val-source" class="bar-val">85%</span>
+                </div>
+                <div class="bar-metric-row">
+                  <span class="bar-name">Lexical Richness</span>
+                  <div class="bar-track-mini">
+                    <div id="bar-lexical" class="bar-fill-mini is-good" style="width: 78%;"></div>
+                  </div>
+                  <span id="val-lexical" class="bar-val">78%</span>
+                </div>
+                <div class="bar-metric-row">
+                  <span class="bar-name">Sensational Urgency</span>
+                  <div class="bar-track-mini">
+                    <div id="bar-sensational" class="bar-fill-mini is-caution" style="width: 15%;"></div>
+                  </div>
+                  <span id="val-sensational" class="bar-val">15%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detected Keywords & Phrasing Signals -->
+          <div class="keywords-card">
+            <h3 class="section-heading">Detected Keywords &amp; Text Cues</h3>
+            <div id="keywords-container" class="keywords-cloud">
+              <!-- Dynamically populated keyword badges -->
+            </div>
+          </div>
+
+          <!-- Explanatory Bullet Points -->
+          <div class="cues-card">
+            <h3 class="section-heading">Key Credibility Observations</h3>
+            <ul id="signal-bullets" class="signal-list">
+              <!-- Dynamically populated 2-3 bullets -->
+            </ul>
+          </div>
+
+          <!-- Gemini Fact-Check Evaluation (if enabled) -->
+          <div id="gemini-card" class="gemini-box" style="display: none;">
+            <div class="gemini-title-row">
+              <span class="gemini-icon">✨</span>
+              <h3 class="section-heading" style="margin-bottom: 0;">Gemini 2.5 Flash Cross-Evaluation</h3>
+            </div>
+            <p id="gemini-explanation" class="gemini-text"></p>
+          </div>
+
+          <!-- Share Actions -->
+          <div class="share-actions-row">
+            <button type="button" id="btn-copy-card" class="btn-secondary">
+              <span>📋 Copy Fact-Check Card</span>
+            </button>
+            <span id="copy-status" class="copy-alert" style="display: none;">✓ Copied to clipboard!</span>
+          </div>
+        </div>
+
+        <!-- BATCH RESULTS (CSV / TXT) -->
+        <div id="batch-result-area" style="display: none;">
+          <div class="batch-title-row">
+            <h2 class="card-main-title">Batch Analysis Results</h2>
+            <span id="batch-filename-tag" class="batch-source-pill">File Upload</span>
+          </div>
+
+          <!-- Batch Visual Graphs & Summary -->
+          <div class="batch-metrics-grid">
+            <div class="batch-metric-box">
+              <span class="metric-num" id="batch-total-count">0</span>
+              <span class="metric-desc">Total Entries</span>
+            </div>
+            <div class="batch-metric-box is-real-box">
+              <span class="metric-num" id="batch-real-count" style="color: var(--verdict-real-color);">0</span>
+              <span class="metric-desc">Likely Authentic</span>
+            </div>
+            <div class="batch-metric-box is-fake-box">
+              <span class="metric-num" id="batch-fake-count" style="color: var(--verdict-fake-color);">0</span>
+              <span class="metric-desc">Likely Misleading</span>
+            </div>
+            <div class="batch-metric-box">
+              <span class="metric-num" id="batch-authenticity-ratio">0%</span>
+              <span class="metric-desc">Authenticity Rate</span>
+            </div>
+          </div>
+
+          <!-- Visual Distribution Ratio Graph -->
+          <div class="batch-graph-card">
+            <div class="batch-graph-header">
+              <span class="graph-card-title">Batch Distribution Graph</span>
+              <div class="graph-legend-group">
+                <span class="legend-chip is-real-chip">Authentic (<span id="legend-real-pct">0%</span>)</span>
+                <span class="legend-chip is-fake-chip">Misleading (<span id="legend-fake-pct">0%</span>)</span>
+              </div>
+            </div>
+            <div class="batch-ratio-bar">
+              <div id="batch-ratio-real" class="ratio-fill is-real" style="width: 50%;"></div>
+              <div id="batch-ratio-fake" class="ratio-fill is-fake" style="width: 50%;"></div>
+            </div>
+          </div>
+
+          <!-- Batch Top Keywords -->
+          <div class="keywords-card" style="margin-top: 1.25rem;">
+            <h3 class="section-heading">Top Recurring Keywords in Batch</h3>
+            <div id="batch-keywords-container" class="keywords-cloud"></div>
+          </div>
+
+          <!-- Responsive Scrollable Results Table with Sticky Header -->
+          <div class="table-container-card">
+            <div class="table-scroll-wrap">
+              <table class="results-table">
+                <thead>
+                  <tr>
+                    <th style="width: 48px;">#</th>
+                    <th>Article Excerpt</th>
+                    <th style="width: 110px;">Score</th>
+                    <th style="width: 140px;">Verdict</th>
+                  </tr>
+                </thead>
+                <tbody id="batch-table-body">
+                  <!-- Rows populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Back Button -->
+        <div class="bottom-actions-row">
+          <button type="button" class="btn-primary" id="btn-back-bottom">← Check Another</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 3: Check History -->
+    <section id="page-history" class="view-panel hidden">
+      <div class="clean-card">
+        <div class="history-top-bar">
+          <div>
+            <h2 class="card-main-title">Check History</h2>
+            <p class="card-sub-description" style="margin-bottom: 0;">Stored privately in your local browser storage.</p>
+          </div>
+          <button type="button" id="btn-clear-history" class="btn-secondary">Clear All</button>
+        </div>
+
+        <div id="history-container" class="history-stack">
+          <!-- Dynamically populated or empty state -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>CrediNews AI • Safe &amp; Private Verification • Models Run Locally</p>
+    </footer>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
